@@ -6,7 +6,8 @@ import dislib as ds
 from dislib.classification import CascadeSVM
 from dislib.data.array import Array
 
-from pycompss.api.api import compss_wait_on, compss_barrier
+from pycompss.api.api import compss_barrier
+from pycompss.api.api import compss_wait_on
 from scipy import signal
 from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
 from sklearn.tree._tree import Tree as SklearnTree
@@ -20,8 +21,6 @@ from collections import Counter
 import random
 import json
 import os
-
-
 
 def zero_pad(data, length):
     extended = np.zeros(length)
@@ -37,16 +36,16 @@ def spectrogram(data, fs=300, nperseg=64, noverlap=32):
     Sxx[mask] = np.log(Sxx[mask])
     return f, t, Sxx
 
-def load_n_preprocess(dataDir):
+def load_n_preprocess(file_test):
     
     max_length = 61
     freq = 300
 
     ## Loading labels and time serie signals (A and N)
-    import csv
-    csvfile = list(csv.reader(open(dataDir+'REFERENCE.csv')))
+    #import csv
+    #csvfile = list(csv.reader(open(dataDir+'REFERENCE.csv')))
 
-    files = [dataDir+i[0]+".mat" for i in csvfile]
+    files = [file_test]
     dataset = np.zeros((len(files),18810))
     count = 0
     for f in files:
@@ -56,12 +55,12 @@ def load_n_preprocess(dataDir):
         dataset[count,] = sx_norm.flatten()
         count += 1
    
-    labels = np.zeros((dataset.shape[0],1))
-    classes = ['A','N', 'O', '~']
-    for row in range(len(csvfile)):
-        labels[row, 0] = 0 if classes.index(csvfile[row][1]) == 0 else 1 if classes.index(csvfile[row][1]) == 1 else 2 if classes.index(csvfile[row][1]) == 2 else 3
+#    labels = np.zeros((dataset.shape[0],1))
+ #   classes = ['A','N']
+  #  for row in range(len(csvfile)):
+   #     labels[row, 0] = 0 if classes.index(csvfile[row][1]) == 0 else 1
 
-    return(dataset,labels)
+    return(dataset)
 
 if __name__ == "__main__":
     args = sys.argv[1:]
@@ -70,29 +69,39 @@ if __name__ == "__main__":
     format_model = args[1]
     dataset_to_use = args[2]
     block_size_x = (int(args[3]), int(args[4]))
-    block_size_y = int(args[5])
-    seed = 1234
-    csvm = CascadeSVM(cascade_arity=3, kernel='rbf', c=1, gamma=0.05, tol=1e-6, random_state=seed)
-    #csvm = CascadeSVC(fold_size=500)
     
-    X_train, y_train = load_n_preprocess(dataset_to_use)
-    print([X_train.shape, y_train.shape])
-    print(Counter(y_train.flatten()))
+    seed = 1234
+    csvm = CascadeSVM(kernel='rbf', c=1, gamma='auto', tol=1e-2, random_state=seed)
+    
+    X_test = load_n_preprocess(file_test)
+    #print([X_test.shape, y_test.shape])
+    #print([X_test.shape])
+    #print(Counter(y_test.flatten()))
     load_time = time.time()
     
-    x = ds.array(X_train, block_size=block_size_x)
-    y = ds.array(y_train, block_size=(block_size_y, 1))
+    csvm.load_model(model_saved, load_format=format_model)
 
-    x_train_shuffle, y_train_shuffle = ds.utils.base.shuffle(x,y)
-    csvm.fit(x_train_shuffle, y_train_shuffle)
+
+    # downsample the majority class to balance the testing
+    #idx = random.sample(list(np.where(y_test == 1.0)[0]), Counter(y_test.flatten())[1.0]-Counter(y_test.flatten())[0.0])
+    #y_test = np.delete(y_test, idx, axis=0)
+    #X_test = np.delete(X_test, idx, axis=0)
+
+    x_t = ds.array(X_test, block_size=block_size_x)
+    #y_t = ds.array(y_test, block_size=(1, 1))
+
+    #x_test_shuffle, y_test_shuffle = ds.utils.base.shuffle(x_t,y_t)
+
+    labels_pred = csvm.predict(x_t)
     compss_barrier()
-    fit_time = time.time()
-    csvm.save_model(model_saved, save_format=format_model)
-    X_train, y_train = load_n_preprocess(dataset_to_use)
-    print([X_train.shape, y_train.shape])
-    print(Counter(y_train.flatten()))
-    X_train = ds.array(X_train, block_size=block_size_x)
-    y_train = ds.array(y_train, block_size=(block_size_y, 1))
-    print("SCORE:")
-    print(compss_wait_on(csvm.score(X_train, y_train)))
-    print("Score time", time.time() - fit_time)
+
+
+    merged_labels = labels_pred.collect()
+    #merged_y_test = y_test_shuffle.collect()
+    print("Labels predict: ", labels_pred)
+    print("Blocks predict: ", merged_labels)
+    #cm = confusion_matrix(merged_y_test, merged_labels)
+    #print(cm)
+    #acc= accuracy_score(y_test_shuffle,labels_pred)
+    #print(acc)
+    #print (classification_report(merged_y_test, merged_labels))

@@ -6,7 +6,8 @@ import dislib as ds
 from dislib.classification import CascadeSVM
 from dislib.data.array import Array
 
-from pycompss.api.api import compss_wait_on, compss_barrier
+from pycompss.api.api import compss_barrier
+from pycompss.api.api import compss_wait_on
 from scipy import signal
 from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
 from sklearn.tree._tree import Tree as SklearnTree
@@ -20,7 +21,6 @@ from collections import Counter
 import random
 import json
 import os
-
 
 
 def zero_pad(data, length):
@@ -72,27 +72,32 @@ if __name__ == "__main__":
     block_size_x = (int(args[3]), int(args[4]))
     block_size_y = int(args[5])
     seed = 1234
-    csvm = CascadeSVM(cascade_arity=3, kernel='rbf', c=1, gamma=0.05, tol=1e-6, random_state=seed)
-    #csvm = CascadeSVC(fold_size=500)
+    csvm = CascadeSVM(kernel='rbf', c=1, gamma='auto', tol=1e-2, random_state=seed)
     
-    X_train, y_train = load_n_preprocess(dataset_to_use)
-    print([X_train.shape, y_train.shape])
-    print(Counter(y_train.flatten()))
+    
+    X_test, y_test = load_n_preprocess(dataset_to_use)
+    print([X_test.shape, y_test.shape])
+    print(Counter(y_test.flatten()))
     load_time = time.time()
+    csvm.load_model(model_saved, load_format=format_model)
+    #model = load_ds_csvm_model(model_saved)
     
-    x = ds.array(X_train, block_size=block_size_x)
-    y = ds.array(y_train, block_size=(block_size_y, 1))
 
-    x_train_shuffle, y_train_shuffle = ds.utils.base.shuffle(x,y)
-    csvm.fit(x_train_shuffle, y_train_shuffle)
+    x_t = ds.array(X_test, block_size=block_size_x)
+    y_t = ds.array(y_test, block_size=(block_size_y, 1))
+
+    x_test_shuffle, y_test_shuffle = ds.utils.base.shuffle(x_t,y_t)
+
+    labels_pred = csvm.predict(x_test)
     compss_barrier()
-    fit_time = time.time()
-    csvm.save_model(model_saved, save_format=format_model)
-    X_train, y_train = load_n_preprocess(dataset_to_use)
-    print([X_train.shape, y_train.shape])
-    print(Counter(y_train.flatten()))
-    X_train = ds.array(X_train, block_size=block_size_x)
-    y_train = ds.array(y_train, block_size=(block_size_y, 1))
-    print("SCORE:")
-    print(compss_wait_on(csvm.score(X_train, y_train)))
-    print("Score time", time.time() - fit_time)
+
+
+    merged_labels = labels_pred.collect()
+    merged_y_test = y_test_shuffle.collect()
+    print("Labels predict: ", labels_pred)
+    print("Blocks predict: ", merged_labels)
+    cm = confusion_matrix(merged_y_test, merged_labels)
+    print(cm)
+    acc= accuracy_score(y_test_shuffle,labels_pred)
+    print(acc)
+    print (classification_report(merged_y_test, merged_labels))
