@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     x_test_shuffle, y_test_shuffle = ds.utils.base.shuffle(x_t,y_t)
 
-    labels_pred = csvm.predict(x_test)
+    labels_pred = csvm.predict(x_test_shuffle)
     compss_barrier()
 
 
@@ -98,6 +98,6 @@ if __name__ == "__main__":
     print("Blocks predict: ", merged_labels)
     cm = confusion_matrix(merged_y_test, merged_labels)
     print(cm)
-    acc= accuracy_score(y_test_shuffle,labels_pred)
+    acc= accuracy_score(merged_y_test,merged_labels)
     print(acc)
     print (classification_report(merged_y_test, merged_labels))

@@ -5,6 +5,7 @@ import time
 import dislib as ds
 from dislib.classification import CascadeSVM
 from dislib.data.array import Array
+from sklearn.datasets import make_classification
 
 from pycompss.api.api import compss_wait_on, compss_barrier
 from scipy import signal
@@ -72,21 +73,28 @@ if __name__ == "__main__":
     block_size_x = (int(args[3]), int(args[4]))
     block_size_y = int(args[5])
     seed = 1234
-    csvm = CascadeSVM(cascade_arity=3, kernel='rbf', c=1, gamma=0.05, tol=1e-6, random_state=seed)
+    csvm = CascadeSVM(kernel='rbf', c=1, gamma='auto', tol=1e-4, random_state=seed)
     #csvm = CascadeSVC(fold_size=500)
     
     X_train, y_train = load_n_preprocess(dataset_to_use)
     print([X_train.shape, y_train.shape])
+    print(Counter(y_train.flatten()))
+    idx = random.sample(list(np.where(y_train == 1.0)[0]), Counter(y_train.flatten())[1.0]-Counter(y_train.flatten())[0.0])
+    y_train = np.delete(y_train, idx, axis=0)
+    X_train = np.delete(X_train, idx, axis=0)
     print(Counter(y_train.flatten()))
     load_time = time.time()
     
     x = ds.array(X_train, block_size=block_size_x)
     y = ds.array(y_train, block_size=(block_size_y, 1))
 
-    x_train_shuffle, y_train_shuffle = ds.utils.base.shuffle(x,y)
+    x_train_shuffle, y_train_shuffle = ds.utils.shuffle(x,y)
     csvm.fit(x_train_shuffle, y_train_shuffle)
     compss_barrier()
+    print("LOADING")
     fit_time = time.time()
+    print("FIT TIME")
+    print(fit_time - load_time)
     csvm.save_model(model_saved, save_format=format_model)
     X_train, y_train = load_n_preprocess(dataset_to_use)
     print([X_train.shape, y_train.shape])
@@ -96,3 +104,4 @@ if __name__ == "__main__":
     print("SCORE:")
     print(compss_wait_on(csvm.score(X_train, y_train)))
     print("Score time", time.time() - fit_time)
+

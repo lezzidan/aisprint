@@ -69,23 +69,17 @@ if __name__ == "__main__":
     format_model = args[1]
     dataset_to_use = args[2]
     block_size_x = (int(args[3]), int(args[4]))
-    
+    block_size_y = int(args[5])
     seed = 1234
     csvm = CascadeSVM(kernel='rbf', c=1, gamma='auto', tol=1e-2, random_state=seed)
+
+    csvm.load_model(model_saved, load_format=format_model)
     
-    X_test = load_n_preprocess(file_test)
+    X_test = load_n_preprocess(dataset_to_use)
     #print([X_test.shape, y_test.shape])
     #print([X_test.shape])
     #print(Counter(y_test.flatten()))
     load_time = time.time()
-    
-    csvm.load_model(model_saved, load_format=format_model)
-
-
-    # downsample the majority class to balance the testing
-    #idx = random.sample(list(np.where(y_test == 1.0)[0]), Counter(y_test.flatten())[1.0]-Counter(y_test.flatten())[0.0])
-    #y_test = np.delete(y_test, idx, axis=0)
-    #X_test = np.delete(X_test, idx, axis=0)
 
     x_t = ds.array(X_test, block_size=block_size_x)
     #y_t = ds.array(y_test, block_size=(1, 1))
@@ -98,10 +92,4 @@ if __name__ == "__main__":
 
     merged_labels = labels_pred.collect()
     #merged_y_test = y_test_shuffle.collect()
-    print("Labels predict: ", labels_pred)
-    print("Blocks predict: ", merged_labels)
-    #cm = confusion_matrix(merged_y_test, merged_labels)
-    #print(cm)
-    #acc= accuracy_score(y_test_shuffle,labels_pred)
-    #print(acc)
-    #print (classification_report(merged_y_test, merged_labels))
+    print("Labels predict: ", labels_pred.collect())
