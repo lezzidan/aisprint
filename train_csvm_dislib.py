@@ -96,12 +96,7 @@ if __name__ == "__main__":
     print("FIT TIME")
     print(fit_time - load_time)
     csvm.save_model(model_saved, save_format=format_model)
-    X_train, y_train = load_n_preprocess(dataset_to_use)
-    print([X_train.shape, y_train.shape])
-    print(Counter(y_train.flatten()))
-    X_train = ds.array(X_train, block_size=block_size_x)
-    y_train = ds.array(y_train, block_size=(block_size_y, 1))
     print("SCORE:")
-    print(compss_wait_on(csvm.score(X_train, y_train)))
+    print(compss_wait_on(csvm.score(x_train_shuffle, y_train_shuffle)))
     print("Score time", time.time() - fit_time)
 
