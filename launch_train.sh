@@ -27,6 +27,6 @@ enqueue_compss --qos=$queue \
  --num_nodes=$num_nodes \
  --base_log_dir=${base_log_dir} \
  --worker_working_dir=${worker_working_dir} \
- train_csvm_dislib.py /home/bsc19/bsc19275/csvm/models/saved.sav
+ train_csvm_dislib.py model_to_save pickle ./training2017/ 200 200 200
 
 
