@@ -73,7 +73,7 @@ if __name__ == "__main__":
     block_size_x = (int(args[3]), int(args[4]))
     block_size_y = int(args[5])
     seed = 1234
-    csvm = CascadeSVM(kernel='rbf', c=1, gamma='auto', tol=1e-4, random_state=seed)
+    csvm = CascadeSVM(max_iter=1, kernel='linear', c=1, tol=1e-3, random_state=seed, check_convergence=False)
     #csvm = CascadeSVC(fold_size=500)
     
     X_train, y_train = load_n_preprocess(dataset_to_use)
@@ -88,8 +88,8 @@ if __name__ == "__main__":
     x = ds.array(X_train, block_size=block_size_x)
     y = ds.array(y_train, block_size=(block_size_y, 1))
 
-    x_train_shuffle, y_train_shuffle = ds.utils.shuffle(x,y)
-    csvm.fit(x_train_shuffle, y_train_shuffle)
+    #x_train_shuffle, y_train_shuffle = ds.utils.shuffle(x,y)
+    csvm.fit(x, y)
     compss_barrier()
     print("LOADING")
     fit_time = time.time()
@@ -97,6 +97,13 @@ if __name__ == "__main__":
     print(fit_time - load_time)
     csvm.save_model(model_saved, save_format=format_model)
     print("SCORE:")
-    print(compss_wait_on(csvm.score(x_train_shuffle, y_train_shuffle)))
+    X_test, y_test = load_n_preprocess('/home/bsc19/bsc19756/CSVMMulticlass/Validation/')
+    load_time = time.time()
+    #model = load_ds_csvm_model(model_saved)
+    
+
+    x_t = ds.array(X_test, block_size=(100, 1000))
+    y_t = ds.array(y_test, block_size=(100, 1))
+    print(compss_wait_on(csvm.score(x_t, y_t)))
     print("Score time", time.time() - fit_time)
 
