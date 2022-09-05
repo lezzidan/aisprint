@@ -72,7 +72,6 @@ def main():
     seed = 1234
     knn = KNeighborsClassifier(n_neighbors=5)
 
-    # X = ds.random_array((2852, 716), block_size_x)
     X_train, y_train = load_n_preprocess(dataset_to_use)
     X = ds.array(X_train, block_size_x)
     Y = ds.array(y_train, (block_size_y, 1))
@@ -96,14 +95,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # df = pd.read_csv('dataset.csv')
-    # df_test = pd.read_csv('dataset_val.csv')
-    
-    # X, Y = df[df.columns[:-1]], df[df.columns[-1]]
-    # X_test, Y_test = df_test[df_test.columns[:-1]], df_test[df_test.columns[-1]]
-
-    # clf = RandomForestClassifier(n_estimators=300, n_jobs=20, class_weight='balanced')
-
-    # clf.fit(X, Y)
-
-    # print(clf.score(X_test, Y_test))

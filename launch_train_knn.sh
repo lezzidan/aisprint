@@ -30,6 +30,6 @@ enqueue_compss --qos=$queue \
  --base_log_dir=${base_log_dir} \
  --worker_working_dir=${worker_working_dir} \
  --pythonpath=/gpfs/scratch/bsc19/bsc19756/aisprint_other_params/KNN/1_worker \
- train_knn_dislib.py knn_1 pickle /gpfs/scratch/bsc19/bsc19756/aisprint_other_params/PCA/balanced_training2017/ 250 250 250
+ train_evaluate_knn.py knn_1 pickle /gpfs/scratch/bsc19/bsc19756/aisprint_other_params/PCA/balanced_training2017/ 250 250 250
 
 
