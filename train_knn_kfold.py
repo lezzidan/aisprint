@@ -17,7 +17,7 @@ from collections import Counter
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils import shuffle
-from knn.base import KNeighborsClassifier
+from dislib.classification import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
 def zero_pad(data, length):
