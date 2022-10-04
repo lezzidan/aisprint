@@ -15,7 +15,7 @@ queue=debug
 
 time_limit=120
 
-num_nodes=2
+num_nodes=7
 
 # log level off for better performance
 enqueue_compss --qos=$queue \
