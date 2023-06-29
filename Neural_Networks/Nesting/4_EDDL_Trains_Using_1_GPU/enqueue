@@ -1,0 +1,57 @@
+#!/bin/bash
+
+source  /home/bsc19/bsc19756/MLESmap/eddl-1.0.4b/pyeddl-1.2.0/pyenv/bin/activate
+
+export CPATH="/apps/EIGEN/3.3.9/GCC/include/eigen3:${CPATH}"
+export EDDL_WITH_CUDA="true"
+export EDDL_DIR=$HOME/MLESmap/eddl-1.0.4b
+export ComputingUnits=1
+export ComputingGPUs=1
+export COMPSS_PYTHON_VERSION=none
+module load COMPSs/Trunk
+module load gcc/8.3.0 cuda/10.2 cudnn/7.6.4 nccl/2.4.8 tensorrt/6.0.1 openmpi/4.0.1 atlas scalapack/2.0.2 fftw/3.3.8 szip/2.1.1 ffmpeg/4.2.1 opencv/4.1.1 python/3.7.4_ML
+#module load gcc/7.3.0
+module load openmpi/3.0.0 protobuf/3.14.0 eigen/3.3.9
+export PYTHONPATH=$HOME/dislib:/home/bsc19/bsc19756/MLESmap/eddl-1.0.4b/pyeddl-1.2.0/pyenv/lib/python3.7/site-packages:$PYTHONPATH
+
+
+# Define script constants
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+
+# Create output directory
+output_dir="${SCRIPT_DIR}/output"
+mkdir -p "${output_dir}"
+
+echo "Enqueueing Matmul's Recusive version with matrices of ${matrix_size}x${matrix_size} with blocks of ${final_block_size}x${final_block_size} doing a ${splits_per_step}x${splits_per_step} partition on each recursive step"
+
+    # Create output directory
+  output_dir="${SCRIPT_DIR}/output"
+  mkdir -p "${output_dir}"
+
+  # Run job
+  enqueue_compss --qos=bsc_cs \
+    --sc_cfg="p9.cfg" \
+    \
+    --num_nodes="5" \
+    --exec_time="30" \
+    --log_level=off \
+    --scheduler="es.bsc.compss.scheduler.orderstrict.fifo.FifoTS" \
+    \
+    --cpus_per_node=160 \
+    --worker_in_master_cpus=160 \
+    \
+    --master_working_dir="${output_dir}/" \
+    --worker_working_dir="${output_dir}/" \
+    --base_log_dir="${output_dir}" \
+    --log_dir="${output_dir}" \
+    --pythonpath="${SCRIPT_DIR}" \
+    \
+    --jvm_workers_opts="-Dcompss.worker.removeWD=false" \
+    \
+    --agents \
+    \
+    --method_name="main" \
+    --lang="python" \
+    "train_cnn_2_classes_nested"
+
