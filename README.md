@@ -1,2 +1,17 @@
 # aisprint
 AI-SPRINT
+
+## Reexecution instructions
+
+To reexecute some of the experiments it is required to download the PhysioNet dataset. Select the desired python script and the corresponding launching script.
+In the launching script it is required to specify the location of the dataset. The location of hte dataset should be specified as the third entry argument to the python script.
+Other aspect to modify of the launching script is the number of nodes, to evaluate the scalability of the algorithms the number of nodes used should range from 2 to 17 (there is always 1 node that works as master node).
+
+## Execution Machines
+The machine learning algorithms were executed in the supercomputer MareNostrum4. If the scripts are going to be executed on another supercomputer, it may be required to load other software modules.
+The Neural Networks scripts are specific for the Power-9 Supercomputer. In another infrastructure it may be required to load other software modules.
+
+## Launching scripts
+In order to launch an experiment it is required only to place the python and the .sh script in the correct directory and launch the .sh script. An example would be the following command:
+
+$ ./launch_train_rf.sh
