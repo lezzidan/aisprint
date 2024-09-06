@@ -6,7 +6,7 @@ import time
 
 import dislib as ds
 from dislib.model_selection import KFold
-from dislib.classification import CascadeSVM, KNeighborsClassifier
+from dislib.classification import CascadeSVM, RandomForestClassifier
 from dislib.decomposition import PCA
 from dislib.preprocessing.standard_scaler import StandardScaler
 
@@ -15,7 +15,6 @@ from scipy import signal
 
 from collections import Counter
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils import shuffle
 from sklearn.metrics import accuracy_score, confusion_matrix
 
@@ -63,6 +62,7 @@ def load_n_preprocess(dataDir):
             rows_to_delete.append(row)
     dataset = np.delete(dataset, rows_to_delete, 0)
     labels = np.delete(labels, rows_to_delete, 0)
+    
     return (dataset, labels)
 
 def main():
@@ -74,13 +74,17 @@ def main():
     block_size_x = (int(args[3]), int(args[4]))
     block_size_y = int(args[5])
     seed = 1234
-    knn = KNeighborsClassifier(n_neighbors=5)
+    rf = RandomForestClassifier(n_estimators=40, random_state=0)
 
     X_train, y_train = load_n_preprocess(dataset_to_use)
     X = ds.array(X_train, block_size_x)
     Y = ds.array(y_train, (block_size_y, 1))
     cv = KFold(n_splits = 5, shuffle = True)
     scaler_time = time.time()
+    total_score = 0
+    predictions = []
+    confusion_matrices = []
+    truth_values = []
     pca = PCA()
     print([X_train.shape, y_train.shape])
     transformed_data = pca.fit_transform(X)
@@ -90,31 +94,26 @@ def main():
     for i in range(len(variance)):
         variance_until_component = variance_until_component + variance[i] / total_variance
         if variance_until_component >= 0.95:
+            print("Number components kept: " +str (i))
             break
-    scal = StandardScaler()
-    X = scal.fit_transform(transformed_data[:, 0:i])
-    total_score = 0
-    predictions = []
-    truth_values = []
-    confusion_matrices = []
+    load_time = time.time()
     compss_barrier()
     print("Scale time:" + str(time.time() - scaler_time))
     fit_time = time.time()
-    for train_ds, test_ds in cv.split(X, Y):
-        knn.fit(train_ds[0], train_ds[1])
+    for train_ds, test_ds in cv.split(transformed_data[:, 0:i], Y):
+        rf.fit(train_ds[0], train_ds[1])
         truth_values.append(test_ds[1])
-        predictions.append(knn.predict(test_ds[0]))
-        
+        predictions.append(rf.predict(test_ds[0]))
+    
     for i in range(len(predictions)):
         true_values = truth_values[i].collect()
-        predicted = predictions[i].collect()
-        total_score += accuracy_score(true_values, predicted)
-        confusion_matrices.append(confusion_matrix(true_values, predicted))
-    print("Fit time: ", time.time() - fit_time)
-    print("Full time: ", time.time() - start_time)
+        prediction = predictions[i].collect()
+        total_score += accuracy_score(true_values, prediction)
+        confusion_matrices.append(confusion_matrix(true_values, prediction))
+    print("Fit time", time.time() - fit_time)
     total_score = total_score/5
-    print("Average score: " + str(total_score))
-    print("Confusion Matrices: ")
+    print("Average score of 5 models: " + str(total_score))
+    print("Confusion Matrices")
     print(confusion_matrices)
 
 

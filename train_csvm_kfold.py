@@ -63,6 +63,7 @@ def load_n_preprocess(dataDir):
             rows_to_delete.append(row)
     dataset = np.delete(dataset, rows_to_delete, 0)
     labels = np.delete(labels, rows_to_delete, 0)
+
     return (dataset, labels)
 
 def main():
@@ -74,7 +75,7 @@ def main():
     block_size_x = (int(args[3]), int(args[4]))
     block_size_y = int(args[5])
     seed = 1234
-    knn = KNeighborsClassifier(n_neighbors=5)
+    csvm = CascadeSVM(max_iter=1, kernel='linear', c=1, tol=1e-3, random_state=seed, check_convergence=False)
 
     X_train, y_train = load_n_preprocess(dataset_to_use)
     X = ds.array(X_train, block_size_x)
@@ -82,7 +83,6 @@ def main():
     cv = KFold(n_splits = 5, shuffle = True)
     scaler_time = time.time()
     pca = PCA()
-    print([X_train.shape, y_train.shape])
     transformed_data = pca.fit_transform(X)
     variance = pca.explained_variance_.collect()
     total_variance = np.sum(variance)
@@ -91,8 +91,8 @@ def main():
         variance_until_component = variance_until_component + variance[i] / total_variance
         if variance_until_component >= 0.95:
             break
-    scal = StandardScaler()
-    X = scal.fit_transform(transformed_data[:, 0:i])
+    load_time = time.time()
+    
     total_score = 0
     predictions = []
     truth_values = []
@@ -100,11 +100,10 @@ def main():
     compss_barrier()
     print("Scale time:" + str(time.time() - scaler_time))
     fit_time = time.time()
-    for train_ds, test_ds in cv.split(X, Y):
-        knn.fit(train_ds[0], train_ds[1])
+    for train_ds, test_ds in cv.split(transformed_data[:, 0:i], Y):
+        csvm.fit(train_ds[0], train_ds[1])
         truth_values.append(test_ds[1])
-        predictions.append(knn.predict(test_ds[0]))
-        
+        predictions.append(csvm.predict(test_ds[0]))
     for i in range(len(predictions)):
         true_values = truth_values[i].collect()
         predicted = predictions[i].collect()
