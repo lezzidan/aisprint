@@ -1,4 +1,4 @@
-FROM compss/compss:2.10
+FROM compss/compss:latest
 
 EXPOSE 43000-44000
 
