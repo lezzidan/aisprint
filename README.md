@@ -23,4 +23,4 @@ For the local execution the command enqueue_compss will not work. Instead using 
 
 $ runcompss --python_interpreter=python3 train_knn_kfold.py knn_model pickle $PATH_TO_DATASET/balanced_training2017/ 250 250 250
 
-Then, for the configuration of the COMPSs runtime, refer to the COMPSs [COMPSs documentation]https://www.genome.gov/(https://compss-doc.readthedocs.io/en/stable/Sections/03_Execution_Environments/03_Deployments/01_Master_worker/01_Local.html)
+Then, for the configuration of the COMPSs runtime, refer to the [COMPSs documentation](https://compss-doc.readthedocs.io/en/stable/Sections/03_Execution_Environments/03_Deployments/01_Master_worker/01_Local.html)
