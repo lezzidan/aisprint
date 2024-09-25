@@ -33,4 +33,4 @@ $ docker build .
 $ docker run -it $DOCKER_IMAGE_ID$ /bin/bash
 Once inside the docker:
 $ cd /home/user
-$ ./run_csvm_train.sh $MODEL_NAME$
+$ ./run_csvm_train.sh $MODEL_NAME pickle $DATASET_PATH 250 250 250
