@@ -30,7 +30,11 @@ Then, for the configuration of the COMPSs runtime, refer to the [COMPSs document
 In order to use the Dockerfile to generate a Docker container and execute the experiments inside it, for example, the following commands are required to launch the CSVM training:
 
 $ docker build .
-$ docker run -it $DOCKER_IMAGE_ID$ /bin/bash
+
+$ docker run -it $DOCKER_IMAGE_ID /bin/bash
+
 Once inside the docker:
+
 $ cd /home/user
+
 $ ./run_csvm_train.sh $MODEL_NAME pickle $DATASET_PATH 250 250 250
